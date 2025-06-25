@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>性別平權叢林冒險</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: url('images/bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+    text-align: center;
+    margin: 0; padding: 0;
+    overflow-x: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .game-container {
+    background: rgba(0,0,0,0.75);
+    padding: 20px;
+    border-radius: 20px;
+    max-width: 800px;
+    width: 90%;
+    position: relative;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    z-index: 2;
+  }
+  .question-container {
+    flex: 1;
+    text-align: left;
+  }
+  h1, h2, p, .result, .score, .timer {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid white;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 0 0 10px 0;
+  }
+  .score, .timer {
+    font-weight: bold;
+  }
+  .swing-vine {
+    width: 450px;
+    animation: swing 2s ease-in-out infinite alternate;
+    pointer-events: none;
+    user-select: none;
+  }
+  .swing-vine img {
+    width: 100%;
+    display: block;
+  }
+  @keyframes swing {
+    0% {transform: rotate(-5deg);}
+    100% {transform: rotate(5deg);}
+  }
+  .answers button {
+    display: block;
+    width: 100%;
+    max-width: 350px;
+    margin: 10px 0;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background-color: #4caf50;
+    color: white;
+    transition: background-color 0.3s ease;
+  }
+  .answers button:hover {
+    background-color: #45a049;
+  }
+  .human-run {
+    position: fixed;
+    bottom: 15vh;
+    width: 600px;
+    right: -600px;
+    animation: humanRun 2s forwards;
+    z-index: 9999;
+    pointer-events: none;
+    user-select: none;
+  }
+  @keyframes humanRun {
+    0% { right: -600px; opacity: 1; }
+    80% { right: calc(50vw - 300px); opacity: 1; }
+    100% { opacity: 0; }
+  }
+  #introScreen {
+    position: fixed;
+    top:0; left:0; width:100vw; height:100vh;
+    background: url('images/bg2.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 10000;
+    text-align: center;
+  }
+  #introScreen p {
+    background: rgba(0,0,0,0.6);
+    border-radius: 15px;
+    padding: 15px 30px;
+    font-size: 22px;
+    max-width: 600px;
+    margin-bottom: 30px;
+    line-height: 1.5;
+  }
+  #startBtn {
+    font-size: 24px;
+    padding: 10px 40px;
+    background-color: #4caf50;
+    border: none;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.3s ease;
+  }
+  #startBtn:hover {
+    background-color: #45a049;
+  }
+</style>
+</head>
+<body>
+
+<div id="introScreen">
+  <p>限時8秒，時間一過遊戲就結束，你就被野人殺死了。</p>
+  <button id="startBtn">開始遊戲</button>
+</div>
+
+<audio id="jungleSound" src="https://www.fesliyanstudios.com/play-mp3/4382" loop></audio>
+<audio id="scarySound" src="https://www.fesliyanstudios.com/play-mp3/6685" preload="auto"></audio>
+<audio id="tenseSound" src="https://www.fesliyanstudios.com/play-mp3/6544" preload="auto"></audio>
+
+<div class="game-container" style="display:none;">
+  <div class="swing-vine">
+    <img src="images/green1.png" alt="藤條" id="vineImg" />
+  </div>
+  <div class="question-container">
+    <h1>叢林冒險：性別平權之路</h1>
+    <div class="score" id="score">分數：0</div>
+    <div class="timer" id="timer">剩餘時間：8 秒</div>
+    <div id="game"></div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {question:"性別平權的意思是什麼？",options:["男性應該比女性強","女性比男性重要","所有性別都應有平等的權利和機會"],answer:2},
+  {question:"以下哪一項屬於性別歧視？",options:["根據能力雇用員工","因性別而不雇用某人","提供所有人同樣的培訓"],answer:1},
+  {question:"誰有權選擇自己的職業？",options:["只有男性","只有女性","每個人"],answer:2},
+  {question:"學校該如何推動性別平等？",options:["強調男生應更努力","鼓勵所有學生表現自己","只舉辦男生比賽"],answer:1},
+  {question:"以下哪一項不是性別平權的一部分？",options:["促進女性參政","禁止男性照顧小孩","平等薪資制度"],answer:1}
+];
+const vines = ["green1.png","green2.png","green3.png","green4.png","green5.png"];
+
+let currentQuestion = 0;
+let branchesPassed = 0;
+let score = 0;
+let vineIndex = 0;
+let answeringAllowed = false;
+let timeLeft = 8;
+let timerInterval;
+
+const gameDiv = document.getElementById("game");
+const scoreDiv = document.getElementById("score");
+const timerDiv = document.getElementById("timer");
+const vineImg = document.getElementById("vineImg");
+const jungleSound = document.getElementById("jungleSound");
+const scarySound = document.getElementById("scarySound");
+const tenseSound = document.getElementById("tenseSound");
+const introScreen = document.getElementById("introScreen");
+const startBtn = document.getElementById("startBtn");
+const gameContainer = document.querySelector(".game-container");
+
+startBtn.addEventListener("click", () => {
+  introScreen.style.display = "none";
+  gameContainer.style.display = "flex";
+  jungleSound.play();
+  nextQuestion();
+});
+
+function nextQuestion() {
+  if (currentQuestion >= questions.length) {
+    gameDiv.innerHTML = `
+      <div class="result">🎉 恭喜你通過了所有分支！<br>最終分數：${score} 分</div>
+      <button onclick="goToNextLevel()">前往下一關</button>
+    `;
+    timerDiv.textContent = "";
+    vineImg.style.display = "none";
+    tenseSound.pause();
+    tenseSound.currentTime = 0;
+    return;
+  }
+
+  timeLeft = 8;
+  timerDiv.textContent = `剩餘時間：${timeLeft} 秒`;
+  answeringAllowed = true;
+
+  tenseSound.currentTime = 0;
+  tenseSound.play();
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      answeringAllowed = false;
+      tenseSound.pause();
+      tenseSound.currentTime = 0;
+      showHumanRun();
+      gameOver("時間到！野人追上你了，你被殺死了！");
+    } else {
+      timerDiv.textContent = `剩餘時間：${timeLeft} 秒`;
+    }
+  }, 1000);
+
+  const q = questions[currentQuestion];
+  gameDiv.innerHTML = `
+    <div class="question">
+      <h2>問題 ${currentQuestion + 1}：</h2>
+      <p>${q.question}</p>
+    </div>
+    <div class="answers">
+      ${q.options.map((opt, i) => `<button onclick="checkAnswer(${i})">${opt}</button>`).join('')}
+    </div>
+  `;
+
+  vineImg.src = `images/${vines[vineIndex]}`;
+  vineImg.style.display = "block";
+  answeringAllowed = true;
+}
+
+function checkAnswer(selected) {
+  if (!answeringAllowed) return;
+  clearInterval(timerInterval);
+  tenseSound.pause();
+  tenseSound.currentTime = 0;
+  answeringAllowed = false;
+
+  const correct = questions[currentQuestion].answer;
+
+  if (selected === correct) {
+    branchesPassed++;
+    score += 10;
+    updateScore();
+    vineIndex = (vineIndex + 1) % vines.length;
+    gameDiv.innerHTML = `<div class="result">答對了！你安全通過了一個分支 🌿</div>
+    <button onclick="advance()">繼續前進</button>`;
+  } else {
+    showHumanRun();
+    gameOver("答錯了！野人追上你了，你被殺死了！");
+  }
+}
+
+function advance() {
+  currentQuestion++;
+  nextQuestion();
+}
+
+function updateScore() {
+  scoreDiv.textContent = `分數：${score}`;
+}
+
+function gameOver(message) {
+  gameDiv.innerHTML = `
+    <div class="result">${message}</div>
+    <button onclick="restartGame()">重新挑戰</button>
+  `;
+  timerDiv.textContent = "";
+  vineImg.style.display = "none";
+}
+
+function restartGame() {
+  currentQuestion = 0;
+  branchesPassed = 0;
+  score = 0;
+  vineIndex = 0;
+  updateScore();
+  nextQuestion();
+}
+
+function goToNextLevel() {
+  window.location.href = "level2.html";
+}
+
+function showHumanRun() {
+  scarySound.currentTime = 0;
+  scarySound.play();
+  const human = document.createElement("img");
+  human.src = "images/human2.png";
+  human.className = "human-run";
+  document.body.appendChild(human);
+  human.addEventListener("animationend", () => {
+    human.remove();
+  });
+}
+</script>
+
+</body>
+</html>
+

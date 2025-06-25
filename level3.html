@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>芭比世界：性別平權冒險</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: url('images/bg7.jpg') no-repeat center center/cover;
+      overflow: hidden;
+    }
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    #ken {
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      width: 200px;
+      z-index: 5;
+    }
+    #barbie {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 600px;
+      z-index: 6;
+    }
+    #dialogue-panel {
+      position: absolute;
+      bottom: 0;
+      left: 240px;
+      right: 50px;
+      background-color: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 20px;
+      border: 2px solid white;
+      font-family: "Microsoft JhengHei", sans-serif;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 10;
+    }
+    #name-box {
+      font-weight: bold;
+      color: #ff69b4;
+      margin-bottom: 5px;
+    }
+    #dialogue-text {
+      white-space: pre-wrap;
+    }
+    #health-bar {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 150px;
+      height: 25px;
+      border: 2px solid red;
+      background-color: #ddd;
+      border-radius: 5px;
+      overflow: hidden;
+      z-index: 15;
+    }
+    #health {
+      width: 100%;
+      height: 100%;
+      background-color: red;
+      transition: width 0.3s ease;
+    }
+    #health-label {
+      position: absolute;
+      top: 50px;
+      left: 20px;
+      color: white;
+      font-size: 16px;
+      z-index: 15;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px black;
+    }
+    #answers {
+      position: absolute;
+      bottom: 180px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      width: 60vw;
+      max-width: 600px;
+      z-index: 10;
+    }
+    .answer-btn {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      border: none;
+      background-color: #ff69b4;
+      color: white;
+      font-size: 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 300px;
+    }
+    .answer-btn:hover {
+      background-color: #ff1493;
+    }
+    #fail-screen, #success-screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: rgba(0,0,0,0.85);
+      color: white;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      z-index: 100;
+    }
+    #next-btn, #restart-btn, #start-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 10px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    #intro-screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: rgba(0,0,0,0.9);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      z-index: 200;
+      font-size: 22px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <img id="ken" src="images/ken.png" alt="肯尼" />
+    <img id="barbie" src="images/bb.png" alt="芭比" />
+
+    <div id="dialogue-panel">
+      <div id="name-box">芭比</div>
+      <div id="dialogue-text">你準備好了嗎？我們一起推翻性別偏見吧！</div>
+    </div>
+
+    <div id="health-bar"><div id="health"></div></div>
+    <div id="health-label">生命值</div>
+
+    <div id="answers"></div>
+
+    <div id="intro-screen">
+      👑 歡迎來到芭比世界！<br><br>
+      在這裡，芭比會向肯尼提問性別平權相關的觀念。<br>
+      回答得好，就能繼續冒險；答錯則會讓芭比失望，扣除生命值。<br><br>
+      💔 每錯一次就會扣一格生命值，扣完就要重新闖關囉！<br><br>
+      <button id="start-btn">開始冒險</button>
+    </div>
+
+    <div id="fail-screen">
+      你失敗了！
+      <button id="restart-btn" onclick="location.reload()">重新闖關</button>
+    </div>
+
+    <div id="success-screen">
+      恭喜你完成所有題目！
+      <button id="next-btn" onclick="location.href='level4.html'">前往下一關</button>
+    </div>
+  </div>
+
+  <audio id="correct-sound" src="sounds/correct.mp3"></audio>
+  <audio id="wrong-sound" src="sounds/wrong.mp3"></audio>
+
+  <script>
+    const questions = [
+      { text: "你覺得男生能穿粉紅色嗎？", options: ["當然可以！", "不夠陽剛", "女生的顏色"], correct: 0 },
+      { text: "你認為誰適合照顧小孩？", options: ["媽媽", "男女都可以", "女性比較有耐心"], correct: 1 },
+      { text: "如果女生愛打電動，你會覺得？", options: ["很酷", "很少見", "女生應該去煮飯"], correct: 0 },
+      { text: "你會介意女朋友賺得比你多嗎？", options: ["不會，太好了", "有點怪", "這樣我沒面子"], correct: 0 },
+      { text: "你覺得男生當幼稚園老師？", options: ["沒問題", "不適合", "有點危險"], correct: 0 }
+    ];
+
+    let current = 0;
+    let health = 3;
+
+    const barbie = document.getElementById('barbie');
+    const dialogueText = document.getElementById('dialogue-text');
+    const healthBar = document.getElementById('health');
+    const failScreen = document.getElementById('fail-screen');
+    const successScreen = document.getElementById('success-screen');
+    const answersDiv = document.getElementById('answers');
+    const correctSound = document.getElementById('correct-sound');
+    const wrongSound = document.getElementById('wrong-sound');
+    const introScreen = document.getElementById('intro-screen');
+    const startBtn = document.getElementById('start-btn');
+
+    startBtn.onclick = () => {
+      introScreen.style.display = 'none';
+      showQuestion();
+    };
+
+    function typeText(text) {
+      dialogueText.textContent = text;
+    }
+
+    function showQuestion() {
+      const q = questions[current];
+      typeText(q.text);
+      answersDiv.innerHTML = '';
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(i === q.correct);
+        answersDiv.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(correct) {
+      if (correct) {
+        correctSound.play();
+        barbie.src = "images/bb.png";
+        current++;
+        if (current >= questions.length) {
+          setTimeout(() => {
+            successScreen.style.display = 'flex';
+            answersDiv.innerHTML = '';
+            typeText("太棒了！你讓肯尼變得更有性別意識！");
+          }, 600);
+        } else {
+          const praises = ["不錯唷～", "這就是平等的精神！", "讚啦肯尼！", "你真的進步好多！"];
+          typeText(praises[Math.floor(Math.random() * praises.length)]);
+          setTimeout(showQuestion, 900);
+        }
+      } else {
+        wrongSound.play();
+        loseHealth();
+      }
+    }
+
+    function loseHealth() {
+      health--;
+      healthBar.style.width = (health / 3 * 100) + '%';
+
+      barbie.src = "images/bbad.png";
+      typeText("這樣說不太好哦～我們要尊重每個人！");
+
+      setTimeout(() => {
+        barbie.src = "images/bb.png";
+        if (health > 0) {
+          showQuestion();
+        }
+      }, 1000);
+
+      if (health === 0) {
+        setTimeout(() => {
+          failScreen.style.display = 'flex';
+          answersDiv.innerHTML = '';
+          typeText("你失敗了！");
+        }, 800);
+      }
+    }
+  </script>
+</body>
+</html>

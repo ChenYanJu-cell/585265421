@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>性別平權廚房遊戲</title>
+  <style>
+    body, html {
+      margin: 0; padding: 0;
+      font-family: 'Microsoft JhengHei', sans-serif;
+      height: 100vh; width: 100vw;
+      background: url('images/shopping.png') no-repeat center center/cover;
+      color: white;
+      overflow: hidden;
+    }
+    .screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      backdrop-filter: blur(4px);
+      background-color: rgba(0,0,0,0.6);
+    }
+    #start-screen { display: flex; }
+    .btn {
+      background-color: #ff69b4;
+      border: none;
+      padding: 12px 24px;
+      font-size: 20px;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background-color 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover { background-color: #ff1493; }
+    #game-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      padding-top: 40px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    #question-area {
+      background-color: rgba(0,0,0,0.6);
+      border-radius: 12px;
+      padding: 20px 30px;
+      width: 85%;
+      max-width: 700px;
+    }
+    #question {
+      font-size: 24px;
+      margin-bottom: 20px;
+      min-height: 60px;
+    }
+    #answers {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    .answer-btn {
+      flex: 1 1 45%;
+      min-width: 140px;
+      padding: 12px 10px;
+      font-size: 18px;
+      border-radius: 10px;
+      border: none;
+      background-color: #ff69b4;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .answer-btn:hover { background-color: #ff1493; }
+    #money {
+      margin-top: 12px;
+      font-size: 20px;
+    }
+    #shop {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+      max-width: 800px;
+      width: 90%;
+    }
+    .item {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid white;
+      border-radius: 12px;
+      padding: 12px;
+      width: 130px;
+      text-align: center;
+      color: white;
+      user-select: none;
+      transition: opacity 0.3s;
+    }
+    .item img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .item button {
+      margin-top: 8px;
+      padding: 6px 10px;
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    .item button:disabled {
+      background-color: grey;
+      cursor: not-allowed;
+    }
+    .item button:hover:not(:disabled) {
+      background-color: #388E3C;
+    }
+    #cook-screen {
+      display: none;
+      background: url('images/tai.jpg') no-repeat center center/cover;
+      background-size: cover;
+      color: black;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      height: 100vh;
+      position: relative;
+    }
+    #steak {
+      width: 440px;
+      margin-top: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #cc3300;
+      display: none;
+    }
+    #chef-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 750px;
+      height: 750px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #chef-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #result-message {
+      margin-top: 20px;
+      font-size: 24px;
+      color: #ff5555;
+      font-weight: bold;
+      min-height: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="start-screen" class="screen">
+    <h1>性別平權廚房</h1>
+    <p>
+      歡迎來到性別平權廚房！<br />
+      請透過回答有挑戰性的性別平權題目，賺取金幣購買做牛排所需的食材。<br />
+      準備好了嗎？
+    </p>
+    <button class="btn" onclick="startGame()">開始遊戲</button>
+  </div>
+
+  <div id="game-container" class="screen">
+    <div id="question-area">
+      <div id="question">載入中...</div>
+      <div id="answers"></div>
+      <div id="result-message"></div>
+      <div id="money">金幣：0</div>
+    </div>
+
+    <div id="shop">
+      <div class="item" data-name="beef" data-price="10">
+        <img src="images/beef.png" alt="牛排" />
+        <div>牛排 $10</div>
+        <button>購買</button>
+      </div>
+      <div class="item" data-name="salt" data-price="4">
+        <img src="images/salt.png" alt="鹽" />
+        <div>鹽 $4</div>
+        <button>購買</button>
+      </div>
+      <div class="item" data-name="pepper" data-price="5">
+        <img src="images/pepper.png" alt="胡椒" />
+        <div>胡椒 $5</div>
+        <button>購買</button>
+      </div>
+      <div class="item" data-name="butter" data-price="6">
+        <img src="images/butter.png" alt="奶油" />
+        <div>奶油 $6</div>
+        <button>購買</button>
+      </div>
+      <div class="item" data-name="herbs" data-price="3">
+        <img src="images/herbs.png" alt="香草" />
+        <div>香草 $3</div>
+        <button>購買</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cook-screen" class="screen">
+    <div id="cooking-text" style="background: rgba(255,255,255,0.8); padding: 20px; border-radius: 15px; max-width: 400px; margin: auto; font-size: 24px;">
+      廚師正在煎牛排中🍽️...
+    </div>
+    <img id="steak" src="" alt="熟牛排" />
+    <div id="done-text" style="margin-top: 30px; font-size: 28px; font-weight: bold; color: #cc3300; display: none;">
+      恭喜你成功做出牛排！
+    </div>
+    
+    <!-- 回第一關按鈕 -->
+    <a id="back-to-index-btn" class="btn" style="display:none; margin-top:40px;" href="index.html">回第一關</a>
+
+    <!-- 再玩一次按鈕 -->
+    <a id="play-again-btn" class="btn" style="display:none; margin-top:20px;" href="level4.html">再玩一次</a>
+  </div>
+
+  <div id="chef-container">
+    <img src="images/chef.png" alt="廚師" />
+  </div>
+
+<script>
+  const questions = [
+    {
+      q: "下列哪一項是正確的性別平等觀念？",
+      a: ["女性和男性都能勝任各種職業", "女性應該主要負責家務", "男性比女性更適合領導"],
+      c: 0
+    },
+    {
+      q: "推動性別平權的重要原因為何？",
+      a: ["促進社會公平與尊重多元", "維持傳統家庭角色分工", "讓某性別享有特權"],
+      c: 0
+    },
+    {
+      q: "「性別刻板印象」是指？",
+      a: ["對男女特定角色的固定認知", "每個人都是獨特個體", "鼓勵多元平等觀念"],
+      c: 0
+    },
+    {
+      q: "如果男生想當幼教老師，正確的態度是？",
+      a: ["鼓勵他追求夢想", "覺得很奇怪", "認為幼教只適合女生"],
+      c: 0
+    },
+    {
+      q: "下列哪種行為是性別歧視？",
+      a: ["公司只聘用男性主管", "依能力錄用員工", "尊重每位員工的選擇"],
+      c: 0
+    }
+  ];
+
+  let currentQ = 0;
+  let coins = 0;
+  let owned = {};
+  let timer = null;
+  const TIME_LIMIT = 8;
+
+  const questionEl = document.getElementById("question");
+  const answersEl = document.getElementById("answers");
+  const moneyEl = document.getElementById("money");
+  const resultMsgEl = document.getElementById("result-message");
+  const items = document.querySelectorAll(".item");
+  const gameContainer = document.getElementById("game-container");
+  const cookScreen = document.getElementById("cook-screen");
+  const playAgainBtn = document.getElementById("play-again-btn");
+  const backToIndexBtn = document.getElementById("back-to-index-btn");
+
+  function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    gameContainer.style.display = 'flex';
+    cookScreen.style.display = 'none';
+    currentQ = 0;
+    coins = 0;
+    owned = {};
+    moneyEl.textContent = `金幣：${coins}`;
+    resultMsgEl.textContent = "";
+    resetShop();
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    clearTimeout(timer);
+    resultMsgEl.textContent = "";
+    if (currentQ >= questions.length) {
+      questionEl.textContent = "你已完成所有題目，可以開始購買食材囉！";
+      answersEl.innerHTML = "";
+      return;
+    }
+
+    const q = questions[currentQ];
+    questionEl.textContent = q.q;
+    answersEl.innerHTML = "";
+
+    q.a.forEach((option, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "answer-btn";
+      btn.textContent = option;
+      btn.onclick = () => checkAnswer(idx === q.c);
+      answersEl.appendChild(btn);
+    });
+
+    timer = setTimeout(() => {
+      failGame("時間到！答題失敗，請重新闖關");
+    }, TIME_LIMIT * 1000);
+  }
+
+  function checkAnswer(isCorrect) {
+    clearTimeout(timer);
+    if (isCorrect) {
+      coins += 10;
+      moneyEl.textContent = `金幣：${coins}`;
+      currentQ++;
+      loadQuestion();
+    } else {
+      failGame("答錯了！請重新闖關");
+    }
+  }
+
+  function failGame(msg) {
+    clearTimeout(timer);
+    resultMsgEl.textContent = msg;
+    answersEl.innerHTML = "";
+    questionEl.textContent = "";
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "btn";
+    retryBtn.textContent = "重新闖關";
+    retryBtn.onclick = () => {
+      retryBtn.remove();
+      startGame();
+    };
+    answersEl.appendChild(retryBtn);
+  }
+
+  items.forEach(item => {
+    const btn = item.querySelector("button");
+    const name = item.dataset.name;
+    const price = parseInt(item.dataset.price);
+
+    btn.onclick = () => {
+      if (coins >= price) {
+        coins -= price;
+        moneyEl.textContent = `金幣：${coins}`;
+        owned[name] = true;
+        item.style.opacity = "0.5";
+        btn.disabled = true;
+        checkCook();
+      } else {
+        alert("金幣不足！");
+      }
+    };
+  });
+
+  function resetShop() {
+    items.forEach(item => {
+      item.style.opacity = "1";
+      const btn = item.querySelector("button");
+      btn.disabled = false;
+    });
+  }
+
+  function checkCook() {
+    const required = ["beef", "salt", "pepper", "butter", "herbs"];
+    const allHave = required.every(i => owned[i]);
+    if (allHave) {
+      gameContainer.style.display = "none";
+      cookScreen.style.display = "flex";
+
+      const cookingText = document.getElementById("cooking-text");
+      const doneText = document.getElementById("done-text");
+      const steakImg = document.getElementById("steak");
+
+      cookingText.style.display = "block";
+      doneText.style.display = "none";
+      steakImg.style.display = "none";
+      steakImg.src = "";
+
+      playAgainBtn.style.display = "none";
+      backToIndexBtn.style.display = "none";
+
+      setTimeout(() => {
+        cookingText.style.display = "none";
+        steakImg.src = "images/steak.png";
+        steakImg.style.display = "block";
+        doneText.style.display = "block";
+        playAgainBtn.style.display = "inline-block";
+        backToIndexBtn.style.display = "inline-block"; // 顯示回第一關按鈕
+      }, 5000);
+    }
+  }
+
+</script>
+
+</body>
+</html>
